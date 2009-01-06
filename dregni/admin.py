@@ -17,5 +17,7 @@ class EventAdmin(admin.ModelAdmin):
             'fields': (('start_date', 'start_time'), ('end_date', 'end_time')),
         }),
     )
+    list_display = ('title', 'start_date', 'end_date', 'tags')
+    search_fields = ('title', 'description', 'tags')
 
 admin.site.register(models.Event, EventAdmin)

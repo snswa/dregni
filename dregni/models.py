@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 from tagging.fields import TagField
 
 from dregni import manager
@@ -52,19 +53,10 @@ class Event(models.Model):
 
 
 class EventMetadata(models.Model):
-    LINK = 'link'
-    PLACE = 'place'
-    GROUP = 'group'
-    PERSON = 'person'
-    CHOICES = (
-        (LINK, _('link')),
-        (PLACE, _('place')),
-        (GROUP, _('group')),
-        (PERSON, _('person')),
-    )
     event = models.ForeignKey(Event, verbose_name=_('event'),
                               related_name='metadata')
-    type = models.CharField(_('type'), max_length=20, choices=CHOICES)
+    type = models.CharField(_('type'), max_length=20,
+                            choices=settings.EVENT_TYPES)
     text = models.CharField(_('text'), max_length=255)
     url = models.URLField(_('URL'), blank=True, verify_exists=False)
 

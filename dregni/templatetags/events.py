@@ -21,6 +21,19 @@ class EventListNode(template.Node):
         return ''
 
 
+class EventYearsNode(template.Node):
+    def __init__(self, context_var):
+        self.context_var = context_var
+
+    def render(self, context):
+        context[self.context_var] = self.get_years()
+        return ''
+
+    def get_years(self):
+        for date in models.Event.objects.dates('start_date', 'year'):
+            yield date.year
+
+
 def do_events_before_day(parser, token):
     """
     Retrieves a list of ``Event`` objects that occur after a specified day.
@@ -76,5 +89,25 @@ def do_events_after_day(parser, token):
     return EventListNode(models.Event._default_manager.after_date,
                          bits[1], nums[0], nums[1], bits[4])
 
+def do_get_event_years(parser, token):
+    """
+    Retrieves a list of ``Event`` objects that occur after a specified day.
+
+    Usage::
+
+       {% get_event_years as [varname] %}
+
+    Example::
+
+        {% get_event_years as years %}
+    """
+    bits = token.contents.split()
+    if len(bits) != 3:
+        raise template.TemplateSyntaxError(_('%s tag requires exactly two arguments') % bits[0])
+    if bits[1] != 'as':
+        raise template.TemplateSyntaxError(_("first argument to %s tag must be 'as'") % bits[0])
+    return EventYearsNode(bits[2])
+
 register.tag('events_before_day', do_events_before_day)
 register.tag('events_after_day', do_events_after_day)
+register.tag('get_event_years', do_get_event_years)

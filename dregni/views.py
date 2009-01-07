@@ -10,7 +10,7 @@ def icalendar(request, queryset):
     site = Site.objects.get_current()
     for event in queryset.all():
         vevent = ical.add('vevent')
-        vevent.add('uid').value = '%s-%s@%s' % (
+        vevent.add('uid').value = '%s.%s@%s' % (
             event.start_date.strftime('%Y-%m-%d'),
             event.slug.encode('utf8'),
             site.domain)

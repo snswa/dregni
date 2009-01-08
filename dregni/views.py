@@ -2,6 +2,7 @@ import datetime
 import vobject
 from django import http
 from django.contrib.sites.models import Site
+from django.conf import settings
 
 
 def icalendar(request, queryset):
@@ -14,22 +15,25 @@ def icalendar(request, queryset):
             event.start_date.strftime('%Y-%m-%d'),
             event.slug.encode('utf8'),
             site.domain)
+        event_url = event.start_date.strftime(settings.EVENT_URL_FORMAT).lower()
+        vevent.add('url').value = event_url
         if event.start_time:
-            start_time = event.start_time
+            start_datetime = datetime.datetime.combine(event.start_date,
+                                                       event.start_time)
+            vevent.add('dtstart').value = start_datetime
+            vevent.add('dtstamp').value = start_datetime
         else:
-            start_time = datetime.time()
-        start_date = datetime.datetime.combine(event.start_date, start_time)
-        vevent.add('dtstart').value = start_date
-        vevent.add('dtstamp').value = start_date
+            vevent.add('dtstart').value = event.start_date
+            vevent.dtstart.value_param = 'DATE'
+            vevent.add('dtstamp').value = datetime.datetime.combine(event.start_date,
+                                                                    datetime.time())
         if event.end_date:
             if event.end_time:
-                end_time = event.end_time
+                vevent.add('dtend').value = datetime.datetime.combine(event.end_date,
+                                                                      event.end_time)
             else:
-                end_time = datetime.time(23, 59)
-            end_date = datetime.datetime.combine(event.end_date, end_time)
-        else:
-            end_date = start_date
-        vevent.add('dtend').value = end_date
+                vevent.add('dtend').value = event.end_date
+                vevent.dtend.value_param = 'DATE'
         vevent.add('summary').value = event.title
         vevent.add('description').value = event.description
         

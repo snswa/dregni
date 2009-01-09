@@ -32,7 +32,7 @@ def icalendar(request, queryset):
                 vevent.add('dtend').value = datetime.datetime.combine(event.end_date,
                                                                       event.end_time)
             else:
-                vevent.add('dtend').value = event.end_date
+                vevent.add('dtend').value = event.end_date + datetime.timedelta(days=1)
                 vevent.dtend.value_param = 'DATE'
         vevent.add('summary').value = event.title
         vevent.add('description').value = event.description

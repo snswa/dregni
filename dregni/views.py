@@ -17,7 +17,7 @@ def icalendar(request, queryset):
             site.domain)
         event_url = event.start_date.strftime(settings.EVENT_URL_FORMAT).lower()
         vevent.add('url').value = event_url
-        if event.start_time:
+        if False and event.start_time:
             start_datetime = datetime.datetime.combine(event.start_date,
                                                        event.start_time)
             vevent.add('dtstart').value = start_datetime
@@ -28,7 +28,7 @@ def icalendar(request, queryset):
             vevent.add('dtstamp').value = datetime.datetime.combine(event.start_date,
                                                                     datetime.time())
         if event.end_date:
-            if event.end_time:
+            if False and event.end_time:
                 vevent.add('dtend').value = datetime.datetime.combine(event.end_date,
                                                                       event.end_time)
             else:

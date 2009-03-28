@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
@@ -29,6 +31,27 @@ class Event(models.Model):
 
     def is_all_day(self):
         return not self.start_time
+
+    def get_start_datetime(self):
+        if self.start_time:
+            return datetime.datetime.combine(self.start_date, self.start_time)
+        return datetime.datetime.combine(self.start_date, datetime.time())
+
+    def get_end_datetime(self):
+        if self.end_date and self.end_time:
+            return datetime.datetime.combine(self.end_date, self.end_time)
+        elif self.end_date:
+            return datetime.datetime.combine(self.end_date + datetime.timedelta(1), datetime.time())
+        return self.get_start_datetime()
+
+    def is_past(self):
+        return self.get_end_datetime() < datetime.datetime.now()
+
+    def is_current(self):
+        return self.get_start_datetime() < datetime.datetime.now() < self.get_end_datetime()
+
+    def is_future(self):
+        return self.get_start_datetime() > datetime.datetime.now()
 
     def previous_events(self, num=5):
         """

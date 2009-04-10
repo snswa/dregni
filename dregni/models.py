@@ -3,12 +3,14 @@ import datetime
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
+from django.contrib.sites.models import Site
 from tagging.fields import TagField
 
 from dregni import manager
 
 
 class Event(models.Model):
+    site = models.ForeignKey(Site)
     title = models.CharField(_('title'), max_length=255)
     slug = models.SlugField(_('slug'))
     description = models.TextField(_('description'))

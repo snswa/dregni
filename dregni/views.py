@@ -58,7 +58,8 @@ def archive_day(request, year, month, day, queryset, date_field,
     if num_recent_days:
         recent_events = recent_events.filter(start_date__gt=date - \
                                              datetime.timedelta(days=num_recent_days))
-    recent_events = recent_events.order_by('-end_date', '-end_time',
+    recent_events = recent_events.extra(select={'_end_date': 'coalesce(end_date, start_date)'})
+    recent_events = recent_events.order_by('-_end_date', '-end_time',
                                            '-start_date', '-start_time')
 
     t = template_loader.get_template(template_name)

@@ -1,9 +1,10 @@
 from distutils.core import setup
- 
- 
+
+
+
 setup(
     name = "dregni",
-    version = "0.1",
+    version = "0.1.dev1",
     author = "Marty Alchin",
     author_email = "gulopine@gamemusic.org",
     description = "A basic event management application for Django",

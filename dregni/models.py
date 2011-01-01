@@ -1,18 +1,21 @@
 import datetime
 
-from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes import generic
 from django.contrib.sites.models import Site
-from tagging.fields import TagField
+from django.core.urlresolvers import NoReverseMatch, reverse
+from django.db import models
+from django.template.defaultfilters import slugify
+from django.utils.translation import ugettext_lazy as _
 
 from dregni import manager
 from dregni import settings
+from tagging.fields import TagField
 
 
 class Event(models.Model):
     site = models.ForeignKey(Site)
     title = models.CharField(_('title'), max_length=255)
-    slug = models.SlugField(_('slug'))
     description = models.TextField(_('description'))
 
     start_date = models.DateField(_('start date'))
@@ -22,11 +25,14 @@ class Event(models.Model):
 
     tags = TagField(_('tags'))
 
+    content_type = models.ForeignKey(ContentType, blank=True, null=True)
+    object_id = models.PositiveIntegerField(blank=True, null=True)
+    group = generic.GenericForeignKey("content_type", "object_id")
+
     objects = manager.EventManager()
 
     class Meta:
         ordering = ('start_date', 'start_time', 'end_date', 'end_time')
-        unique_together = ('start_date', 'slug')
 
     def __unicode__(self):
         return self.title

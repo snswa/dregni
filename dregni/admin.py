@@ -4,10 +4,9 @@ from dregni import models
 
 class EventAdmin(admin.ModelAdmin):
 
-    prepopulated_fields = {'slug': ['title']}
     fieldsets = (
         (None, {
-            'fields': (('title', 'slug'), 'description', ('tags', 'site')),
+            'fields': ('title', 'description', ('tags', 'site')),
         }),
         ('Scheduling', {
             'fields': (('start_date', 'start_time'), ('end_date', 'end_time')),

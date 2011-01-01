@@ -1,7 +1,23 @@
+import datetime
+
 from django import template
 register = template.Library()
 
-from dregni import models
+from dregni.models import Event
+
+
+def _yesterday():
+    return datetime.date.today() - datetime.timedelta(days=1)
+
+
+@register.filter
+def upcomingevents(group, num_days=28):
+    if group is None:
+        queryset = Event.objects.filter(content_type=None, object_id=None)
+    else:
+        queryset = group.content_objects(Event)
+    event_list = Event.objects.after_date(_yesterday(), num_days, queryset)
+    return event_list
 
 
 class EventListNode(template.Node):
@@ -30,7 +46,7 @@ class EventYearsNode(template.Node):
         return ''
 
     def get_years(self):
-        for date in models.Event.objects.dates('start_date', 'year'):
+        for date in Event.objects.dates('start_date', 'year'):
             yield date.year
 
 
@@ -55,7 +71,7 @@ def do_events_before_day(parser, token):
     if len(nums) == 1:
         # If a number of days aren't provided, don't limit it
         nums.append('0')
-    return EventListNode(models.Event._default_manager.before_date,
+    return EventListNode(Event._default_manager.before_date,
                          bits[1], nums[0], nums[1], bits[4])
 
 
@@ -86,7 +102,7 @@ def do_events_after_day(parser, token):
     if len(nums) == 1:
         # If a number of days aren't provided, don't limit it
         nums.append('0')
-    return EventListNode(models.Event._default_manager.after_date,
+    return EventListNode(Event._default_manager.after_date,
                          bits[1], nums[0], nums[1], bits[4])
 
 def do_get_event_years(parser, token):

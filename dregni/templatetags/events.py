@@ -11,13 +11,17 @@ def _yesterday():
 
 
 @register.filter
-def upcomingevents(group, num_days=28):
-    if group is None:
-        queryset = Event.objects.filter(content_type=None, object_id=None)
-    else:
-        queryset = group.content_objects(Event)
-    event_list = Event.objects.after_date(_yesterday(), num_days, queryset)
-    return event_list
+def upcomingevents(queryset, num_days):
+    """Filter a queryset of events to include only upcoming events.
+
+    Example usage, first getting a limited set of events from a group::
+
+        {% content_objects group 'dregni.Event' as events %}
+        {% with events|upcomingevents:28 as events %}
+            ...
+        {% endwith %}
+    """
+    return Event.objects.after_date(_yesterday(), num_days, queryset)
 
 
 class EventListNode(template.Node):

@@ -8,8 +8,8 @@ from django.db import models
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
 
+from dregni.conf import settings
 from dregni import manager
-from dregni import settings
 from tagging.fields import TagField
 
 

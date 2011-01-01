@@ -2,12 +2,8 @@ from django.contrib import admin
 from dregni import models
 
 
-class EventMetadataInline(admin.TabularInline):
-    model = models.EventMetadata
-
-
 class EventAdmin(admin.ModelAdmin):
-    inlines = [EventMetadataInline]
+
     prepopulated_fields = {'slug': ['title']}
     fieldsets = (
         (None, {

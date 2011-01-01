@@ -75,16 +75,3 @@ class Event(models.Model):
         qs = self._default_manager.filter(same_day | future_days)
         return qs.order_by('-end_date', '-end_time',
                            '-start_date', '-start_time')[num]
-
-
-class EventMetadata(models.Model):
-    event = models.ForeignKey(Event, verbose_name=_('event'),
-                              related_name='metadata')
-    type = models.CharField(_('type'), max_length=20,
-                            choices=settings.EVENT_TYPES)
-    text = models.CharField(_('text'), max_length=255)
-    url = models.URLField(_('URL'), blank=True, verify_exists=False)
-
-    def __unicode__(self):
-        return self.text
-

@@ -12,4 +12,8 @@ class EventForm(forms.ModelForm):
             'tags',
             'content_type',
             'object_id',
+            'creator',
+            'created',
+            'modifier',
+            'modified',
         )

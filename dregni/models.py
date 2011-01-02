@@ -1,5 +1,6 @@
 import datetime
 
+from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.contrib.sites.models import Site
@@ -28,6 +29,11 @@ class Event(models.Model):
     content_type = models.ForeignKey(ContentType, blank=True, null=True)
     object_id = models.PositiveIntegerField(blank=True, null=True)
     group = generic.GenericForeignKey("content_type", "object_id")
+
+    creator = models.ForeignKey(User, blank=True, null=True, related_name='dregni_events_created')
+    created = models.DateTimeField(_('created'), auto_now_add=True)
+    modifier = models.ForeignKey(User, blank=True, null=True, related_name='dregni_events_modified')
+    modified = models.DateTimeField(_('modified'), auto_now=True, db_index=True)
 
     objects = manager.EventManager()
 

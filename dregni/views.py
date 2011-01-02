@@ -142,8 +142,12 @@ def edit(request, event_id=None,
         event_form = form_class(request.POST, instance=event)
         if event_form.is_valid():
             event = event_form.save(commit=False)
-            event.site = Site.objects.get_current()
-            event.group = group
+            if not event.pk:
+                event.site = Site.objects.get_current()
+                event.group = group
+                event.creator = request.user
+            else:
+                event.modifier = request.user
             event.save()
             return HttpResponseRedirect(event.get_absolute_url())
     elif request.method == 'GET':

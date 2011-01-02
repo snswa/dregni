@@ -1,21 +1,171 @@
 import datetime
 import time
 import vobject
-from django import http
+
 from django.contrib.sites.models import Site
 from django.conf import settings
-from django.http import HttpResponse, Http404
-from django.template import loader, RequestContext
+from django.core.urlresolvers import reverse
 from django.db.models import Q
+from django.http import HttpResponse, Http404, HttpResponseForbidden, HttpResponseRedirect
+from django.shortcuts import render_to_response, get_object_or_404
+from django.template import loader, RequestContext
+
+from dregni.forms import EventForm
+from dregni.models import Event
+
+
+def _group_bridge_base(request):
+    group = getattr(request, 'group', None)
+    if group:
+        bridge = request.bridge
+        group_base = bridge.group_base_template()
+    else:
+        bridge = None
+        group_base = None
+    return (group, bridge, group_base)
+
+
+def index(request, filter_qs=lambda qs: qs,
+          template_name='dregni/index.html', extra_context=None, **kwargs
+          ):
+    extra_context = extra_context or {}
+    group, bridge, group_base = _group_bridge_base(request)
+    #
+    # Queryset.
+    if group:
+        queryset = group.content_objects(Event)
+    else:
+        queryset = Event.objects.filter(content_type=None, object_id=None)
+    event_list = filter_qs(queryset)
+    #
+    template_context = {
+        'event_list': event_list,
+        'group': group,
+        'group_base': group_base,
+    }
+    template_context.update(extra_context)
+    return render_to_response(template_name, template_context, RequestContext(request))
+
+
+def event(request, event_id, slug=None,
+          template_name='dregni/event.html', extra_context=None, **kwargs
+          ):
+    extra_context = extra_context or {}
+    group, bridge, group_base = _group_bridge_base(request)
+    #
+    # Queryset.
+    if group:
+        queryset = group.content_objects(Event)
+    else:
+        queryset = Event.objects.filter(content_type=None, object_id=None)
+    try:
+        event = queryset.get(pk=event_id)
+    except Event.DoesNotExist:
+        raise Http404
+    #
+    template_context = {
+        'event': event,
+        'group': group,
+        'group_base': group_base,
+    }
+    template_context.update(extra_context)
+    return render_to_response(template_name, template_context, RequestContext(request))
+
+
+def delete(request, event_id,
+           event_delete_predicate=lambda request, event: True,
+           template_name='dregni/delete.html', extra_context=None, **kwargs
+           ):
+    extra_context = extra_context or {}
+    group, bridge, group_base = _group_bridge_base(request)
+    #
+    # Get the event specified.
+    if group:
+        queryset = group.content_objects(Event)
+    else:
+        queryset = Event.objects.filter(content_type=None, object_id=None)
+    try:
+        event = queryset.get(pk=event_id)
+    except Event.DoesNotExist:
+        raise Http404
+    #
+    # Enforce predicate.
+    if not event_delete_predicate(request, event):
+        return HttpResponseForbidden('You do not have permission to delete events.')
+    #
+    if request.method == 'POST':
+        if request.POST.get('delete') == '1':
+            event.delete()
+            if group:
+                url = bridge.reverse('dregni_index', group)
+            else:
+                url = reverse('dregni_index')
+        else:
+            url = event.get_absolute_url()
+        return HttpResponseRedirect(url)
+    #
+    template_context = {
+        'event': event,
+        'group': group,
+        'group_base': group_base,
+    }
+    template_context.update(extra_context)
+    return render_to_response(template_name, template_context, RequestContext(request))
+
+
+def edit(request, event_id=None,
+         event_edit_predicate=lambda request, event: True,
+         form_class=EventForm,
+         template_name='dregni/edit.html', extra_context=None, **kwargs
+         ):
+    extra_context = extra_context or {}
+    group, bridge, group_base = _group_bridge_base(request)
+    #
+    # Get the event if one was specified.
+    if event_id is None:
+        event = None
+    else:
+        if group:
+            queryset = group.content_objects(Event)
+        else:
+            queryset = Event.objects.filter(content_type=None, object_id=None)
+        try:
+            event = queryset.get(pk=event_id)
+        except Event.DoesNotExist:
+            raise Http404
+    #
+    # Enforce predicate.
+    if not event_edit_predicate(request, event):
+        return HttpResponseForbidden('You do not have permission to edit events.')
+    #
+    if request.method == 'POST':
+        event_form = form_class(request.POST, instance=event)
+        if event_form.is_valid():
+            event = event_form.save(commit=False)
+            event.site = Site.objects.get_current()
+            event.group = group
+            event.save()
+            return HttpResponseRedirect(event.get_absolute_url())
+    elif request.method == 'GET':
+        event_form = form_class(instance=event)
+    #
+    template_context = {
+        'event': event,
+        'event_form': event_form,
+        'group': group,
+        'group_base': group_base,
+    }
+    template_context.update(extra_context)
+    return render_to_response(template_name, template_context, RequestContext(request))
 
 
 def archive_day(request, year, month, day, queryset, date_field,
-        month_format='%b', day_format='%d', template_name=None,
-        template_loader=loader, extra_context=None, allow_empty=True,
-        context_processors=None, template_object_name='object',
-        mimetype=None, allow_future=True,
-        num_recent_days=90, num_upcoming_days=90,
-        num_recent_events=5, num_upcoming_events=5):
+                month_format='%b', day_format='%d', template_name=None,
+                template_loader=loader, extra_context=None, allow_empty=True,
+                context_processors=None, template_object_name='object',
+                mimetype=None, allow_future=True,
+                num_recent_days=90, num_upcoming_days=90,
+                num_recent_events=5, num_upcoming_events=5):
     """
     Generic daily archive view.
 
@@ -37,7 +187,7 @@ def archive_day(request, year, month, day, queryset, date_field,
         raise Http404
 
     model = queryset.model
-    
+
     # Locate events for the given date
     current_events = queryset.filter(Q(end_date__isnull=True, start_date=date) | \
                                      Q(start_date__lte=date, end_date__gte=date))
@@ -110,11 +260,11 @@ def icalendar(request, queryset):
                 vevent.dtend.value_param = 'DATE'
         vevent.add('summary').value = event.title
         vevent.add('description').value = event.description
-        
+
         for meta in event.metadata.all():
             if meta.type == 'place':
                 vevent.add('location').value = meta.text
         vevent.add('categories').value = event.tags.split()
 
-    return http.HttpResponse(ical.serialize(), mimetype='text/calendar')
+    return HttpResponse(ical.serialize(), mimetype='text/calendar')
 

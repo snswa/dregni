@@ -37,6 +37,20 @@ class Event(models.Model):
     def __unicode__(self):
         return self.title
 
+    def get_absolute_url(self):
+        kwargs = {
+            'event_id': self.id,
+            'slug': slugify(self.title),
+        }
+        group = self.group
+        try:
+            if group:
+                return group.content_bridge.reverse('dregni_event_slug', group, kwargs)
+            else:
+                return reverse('dregni_event_slug', kwargs=kwargs)
+        except NoReverseMatch:
+            return None
+
     def is_all_day(self):
         return not self.start_time
 

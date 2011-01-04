@@ -1,3 +1,4 @@
+import calendar
 import datetime
 import time
 import vobject
@@ -12,6 +13,7 @@ from django.template import loader, RequestContext
 
 from dregni.forms import EventForm
 from dregni.models import Event
+from dregni.utils import events_by_week_and_day, iterweekdays
 
 
 def _group_bridge_base(request):
@@ -25,7 +27,7 @@ def _group_bridge_base(request):
     return (group, bridge, group_base)
 
 
-def index(request, filter_qs=lambda qs: qs,
+def index(request, start_date=None, weeks=None, filter_qs=lambda qs: qs,
           template_name='dregni/index.html', extra_context=None, **kwargs
           ):
     extra_context = extra_context or {}
@@ -43,6 +45,16 @@ def index(request, filter_qs=lambda qs: qs,
         'group': group,
         'group_base': group_base,
     }
+    if callable(start_date):
+        start_date = start_date()
+    if start_date is not None:
+        template_context.update({
+            'day_abbr': [calendar.day_abbr[idx] for idx in iterweekdays()],
+            'day_name': [calendar.day_name[idx] for idx in iterweekdays()],
+            'start_date': start_date,
+            'today': datetime.date.today(),
+            'weeks': events_by_week_and_day(event_list, start_date, weeks),
+        })
     template_context.update(extra_context)
     return render_to_response(template_name, template_context, RequestContext(request))
 

@@ -23,11 +23,7 @@ def events_by_week_and_day(queryset, start_date, weeks, first_weekday=settings.F
         date = <date object>
         events = <list of events for individual day>
     """
-    # Find our offset from the beginning of the week, and determine the first
-    # and last dates for our query.
-    start_weekday = start_date.weekday()
-    offset = (start_weekday - first_weekday) % 7
-    first_date = start_date - timedelta(days=offset)
+    first_date = first_weekdate(start_date, first_weekday)
     last_date = first_date + timedelta(days=weeks * 7)
     # Build the week and day lists.
     current_date = first_date
@@ -52,6 +48,13 @@ def events_by_week_and_day(queryset, start_date, weeks, first_weekday=settings.F
         day_map[date]['events'].extend(sorted(grouper, event_time_cmp))
     #
     return week_list
+
+
+def first_weekdate(start_date, first_weekday=settings.FIRST_WEEKDAY):
+    """Return the first date in the week that start date falls within."""
+    start_weekday = start_date.weekday()
+    offset = (start_weekday - first_weekday) % 7
+    return start_date - timedelta(days=offset)
 
 
 def iterweekdays(first_weekday=settings.FIRST_WEEKDAY):

@@ -11,7 +11,7 @@ def _yesterday():
 
 
 @register.filter
-def upcomingevents(queryset, num_days):
+def upcomingevents(queryset, num_days=None):
     """Filter a queryset of events to include only upcoming events.
 
     Example usage, first getting a limited set of events from a group::
